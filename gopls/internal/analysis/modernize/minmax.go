@@ -48,6 +48,19 @@ func minmax(pass *analysis.Pass) {
 			rhs     = tassign.Rhs[0]
 			scope   = pass.TypesInfo.Scopes[ifStmt.Body]
 			sign    = isInequality(compare.Op)
+
+			addNewline = func(str string) string {
+				if str == "" {
+					return ""
+				}
+				return "\n" + str
+			}
+			orSpace = func(str string) string {
+				if str == "" {
+					return " "
+				}
+				return str
+			}
 		)
 
 		if fblock, ok := ifStmt.Else.(*ast.BlockStmt); ok && isAssignBlock(fblock) {
@@ -91,11 +104,13 @@ func minmax(pass *analysis.Pass) {
 							// Replace IfStmt with lhs = min(a, b).
 							Pos: ifStmt.Pos(),
 							End: ifStmt.End(),
-							NewText: fmt.Appendf(nil, "%s%s = %s(%s, %s)",
-								allComments(file, ifStmt.Pos(), ifStmt.End()),
+							NewText: fmt.Appendf(nil, "%s = %s(%s%s,%s%s)",
 								analysisinternal.Format(pass.Fset, lhs),
 								sym,
+								addNewline(allComments(file, ifStmt.Pos(), ifStmt.Else.Pos())),
 								analysisinternal.Format(pass.Fset, a),
+								// append an extra space when there are no comments.
+								orSpace(addNewline(allComments(file, ifStmt.Else.Pos(), ifStmt.End()))),
 								analysisinternal.Format(pass.Fset, b)),
 						}},
 					}},
@@ -154,12 +169,13 @@ func minmax(pass *analysis.Pass) {
 							Pos: fassign.Pos(),
 							End: ifStmt.End(),
 							// Replace "x := a; if ... {}" with "x = min(...)", preserving comments.
-							NewText: fmt.Appendf(nil, "%s %s %s %s(%s, %s)",
-								allComments(file, fassign.Pos(), ifStmt.End()),
+							NewText: fmt.Appendf(nil, "%s %s %s(%s%s,%s%s)",
 								analysisinternal.Format(pass.Fset, lhs),
 								fassign.Tok.String(),
 								sym,
+								addNewline(allComments(file, fassign.Pos(), ifStmt.Pos())),
 								analysisinternal.Format(pass.Fset, a),
+								orSpace(addNewline(allComments(file, ifStmt.Pos(), ifStmt.End()))),
 								analysisinternal.Format(pass.Fset, b)),
 						}},
 					}},
