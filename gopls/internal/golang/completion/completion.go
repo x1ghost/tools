@@ -787,7 +787,6 @@ func (c *completer) containingIdent(src []byte) *ast.Ident {
 	}
 
 	fakeIdent := &ast.Ident{Name: lit, NamePos: pos}
-
 	if _, isBadDecl := c.path[0].(*ast.BadDecl); isBadDecl {
 		// You don't get *ast.Idents at the file level, so look for bad
 		// decls and use the manually extracted token.
@@ -802,6 +801,14 @@ func (c *completer) containingIdent(src []byte) *ast.Ident {
 		// is a keyword. This improves completion after an "accidental
 		// keyword", e.g. completing to "variance" in "someFunc(var<>)".
 		return fakeIdent
+	} else if block, ok := c.path[0].(*ast.BlockStmt); ok && len(block.List) != 0 {
+		if expr, ok := block.List[0].(*ast.ExprStmt); ok &&
+			is[*ast.Ident](expr.X) {
+			// The input may happen after an ident, which will be parsed into a block stmt.
+			// For example, the r is the input lit in src 'var left, right string; left, r'.
+			// In this case, we should offer r as an ident as well.
+			return fakeIdent
+		}
 	}
 
 	return nil

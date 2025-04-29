@@ -157,6 +157,7 @@ func toProtocolCompletionItems(candidates []completion.CompletionItem, surroundi
 			if suffix == "" || strings.Contains(insertText, suffix) {
 				insertRng = replaceRng
 			}
+
 			// Insert and Replace ranges share the same start position and
 			// the same text edit but the end position may differ.
 			// See the comment for the CompletionItem's TextEdit field.

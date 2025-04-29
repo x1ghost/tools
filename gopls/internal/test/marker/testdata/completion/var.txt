@@ -1,0 +1,27 @@
+This test checks that completion gives correct completion when using variables.
+
+-- flags --
+-ignore_extra_diags
+
+-- go.mod --
+module golang.org/lsptests/variable
+
+go 1.18
+
+-- settings.json --
+{
+	"completeUnimported": false
+}
+
+-- variable.go --
+package variable
+
+func _(){
+	var (
+		left  string //@item(varLeft, "left", "string", "var")
+		right string //@item(varRight, "right", "string", "var")
+	)
+
+	ri //@complete(" //", varRight)
+	left, ri //@complete(" //", varLeft, varRight)
+}

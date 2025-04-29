@@ -1437,3 +1437,44 @@ func main() {
 		}
 	})
 }
+
+// Fix for golang/go#72753
+func TestVarCompletion(t *testing.T) {
+	const files = `
+-- go.mod --
+module mod.com
+
+go 1.18
+-- a.go --
+package a
+
+func _(left, right string) {
+	left, r// here
+}
+`
+	Run(t, files, func(t *testing.T, env *Env) {
+		env.OpenFile("a.go")
+		pos := env.RegexpSearch("a.go", `// here`)
+		result := env.Completion(pos)
+
+		var rightItem protocol.CompletionItem
+		for _, item := range result.Items {
+			if item.Label == "right" {
+				rightItem = item
+			}
+		}
+
+		wantReplaced := protocol.Range{
+			Start: protocol.Position{
+				Line: pos.Range.Start.Line,
+				// the start character should at the position of r so it will be replaced.
+				Character: pos.Range.Start.Character - 1,
+			},
+			End: pos.Range.Start,
+		}
+
+		if diff := cmp.Diff(wantReplaced, rightItem.TextEdit.Value.(protocol.InsertReplaceEdit).Replace); diff != "" {
+			t.Errorf("Completion: unexpected mismatch (-want +got):\n%s", diff)
+		}
+	})
+}
