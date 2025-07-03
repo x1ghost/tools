@@ -481,6 +481,11 @@ func hover(ctx context.Context, snapshot *cache.Snapshot, fh file.Handle, pp pro
 			}
 			typeDecl = typeDecl[:nl] + " // " + sizeOffset + typeDecl[nl:]
 		}
+		// realTypeDecl is defined to store the underlying definition of an alias.
+		realTypeDecl, _ := findRhsTypeDecl(ctx, snapshot, pkg, obj) // tolerate the error
+		if realTypeDecl != "" {
+			typeDecl += fmt.Sprintf("\n\n%s", realTypeDecl)
+		}
 
 		// Promoted fields
 		//
@@ -554,12 +559,6 @@ func hover(ctx context.Context, snapshot *cache.Snapshot, fh file.Handle, pp pro
 		if sizeOffset != "" {
 			signature += " // " + sizeOffset
 		}
-	}
-
-	// realTypeDecl is defined to store the underlying definition of an alias.
-	realTypeDecl, _ := findRhsTypeDecl(ctx, snapshot, pkg, obj) // tolerate the error
-	if realTypeDecl != "" {
-		typeDecl += fmt.Sprintf("\n\n%s", realTypeDecl)
 	}
 
 	// Compute link data (on pkg.go.dev or other documentation host).
